@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:vrlizate/vrlizate.dart' show VrDirectDeviceBridge;
 
 /// Resolves compact local device capability summaries for `vrlizate_ble`
 /// 5 GHz hybrid link negotiation (`VrHybridBleUdpHostLink` /
@@ -23,13 +24,26 @@ abstract final class VrBlePeerCapabilities {
         return await custom();
       } catch (_) {}
     }
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+    if (kIsWeb) return null;
+    final directBridge = VrDirectDeviceBridge.instance;
+    final supportsDirect = switch (defaultTargetPlatform) {
+      TargetPlatform.android => directBridge.androidOpenXrHandlesSync() != null,
+      TargetPlatform.iOS || TargetPlatform.macOS => directBridge.isAvailable,
+      _ => false,
+    };
+    if (!supportsDirect && defaultTargetPlatform != TargetPlatform.android) {
       return null;
     }
     try {
-      final raw = await _channel
-          .invokeMethod<Object?>('read')
-          .timeout(const Duration(milliseconds: 900));
+      Object? raw;
+      if (supportsDirect) {
+        raw = directBridge.readDeviceCapabilitiesSync();
+      }
+      if (raw == null && defaultTargetPlatform == TargetPlatform.android) {
+        raw = await _channel
+            .invokeMethod<Object?>('read')
+            .timeout(const Duration(milliseconds: 900));
+      }
       if (raw is! Map) return null;
       final maker = (raw['manufacturer'] as String?)?.trim() ?? '';
       final model = (raw['model'] as String?)?.trim() ?? '';
