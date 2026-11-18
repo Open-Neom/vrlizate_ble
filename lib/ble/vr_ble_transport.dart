@@ -642,7 +642,11 @@ Future<VrControllerLink> _connectVrBleController(
     await FlutterBluePlus.stopScan();
     await scan.cancel();
     scan = null;
-    await device.connect(timeout: const Duration(seconds: 8), mtu: null);
+    await device.connect(
+      license: License.nonprofit,
+      timeout: const Duration(seconds: 8),
+      mtu: null,
+    );
     attempt.check();
     final services = await device.discoverServices(timeout: 5);
     attempt.check();
