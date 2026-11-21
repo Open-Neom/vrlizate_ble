@@ -18,7 +18,11 @@ class VrControllerPairingStore {
            storage ??
            const FlutterSecureStorage(
              aOptions: AndroidOptions(
+               // 9.x needs both settings to reopen existing invitations. Keep
+               // their storage name through 10.x's automatic cipher migration.
+               // ignore: deprecated_member_use
                encryptedSharedPreferences: true,
+               // ignore: deprecated_member_use
                sharedPreferencesName: 'vrlizate_controller_pairing',
              ),
              iOptions: IOSOptions(
